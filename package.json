@@ -18,7 +18,7 @@
   "scripts": {
     "demo:server": "node demo/server.js",
     "demo": "node scripts/demo.js",
-    "test": "node --test test/",
+    "test": "node --test test/*.test.js",
     "set-key": "sh scripts/set-key.sh"
   },
   "keywords": [
