@@ -1,0 +1,14 @@
+Project: Jaanch
+Hackathon: BharatCode Build League 2026
+Author: Ajay Raghav (github.com/Ajay702)
+
+What it is:
+An AI QA tester for web apps. Jaanch opens your site in the Brave browser with Playwright,
+uses it like a real user (clicks, forms, navigation), catches crashes, failed API calls,
+broken pages and accessibility gaps, then uses the BharatCode model to explain each bug
+and suggest a fix, and writes Playwright regression tests for every bug it finds.
+
+How BharatCode is used:
+- Model: qwen-3.8-27b via https://bharatcode.ai/api/model/v1 (Responses API, structured JSON output)
+- Planner: picks the next action to explore and fills forms with realistic Indian test data
+- Explainer: turns raw errors + source snippets into bug reports with root cause and fix

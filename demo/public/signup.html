@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Sign up · ChaiCart</title><link rel="stylesheet" href="/style.css"></head><body>
+<nav><b>☕ ChaiCart</b><a href="/">Home</a><a href="/menu">Menu</a><a href="/pricing">Pricing</a><a href="/signup">Sign up</a><a href="/dashboard">Dashboard</a></nav>
+<main>
+  <h1>Create your account</h1>
+  <form id="signup-form">
+    <label>Full name <input name="name" required></label>
+    <label>Email <input name="email" type="email" required></label>
+    <input name="phone" type="tel" placeholder="Mobile number">
+    <label>Password <input name="password" type="password" required minlength="8"></label>
+    <button class="btn" type="submit">Create account</button>
+  </form>
+  <p id="success-msg" class="muted"></p>
+</main>
+<script src="/signup.js"></script></body></html>

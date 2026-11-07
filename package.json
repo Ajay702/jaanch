@@ -1,0 +1,40 @@
+{
+  "name": "jaanch",
+  "version": "0.1.0",
+  "description": "AI QA tester for web apps: explores your site in Brave with Playwright, finds bugs, explains fixes with BharatCode AI, and writes Playwright regression tests.",
+  "type": "module",
+  "bin": {
+    "jaanch": "bin/jaanch.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "BharatCode.txt"
+  ],
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "demo:server": "node demo/server.js",
+    "demo": "node scripts/demo.js",
+    "test": "node --test test/"
+  },
+  "keywords": [
+    "qa",
+    "testing",
+    "playwright",
+    "brave",
+    "ai",
+    "bharatcode",
+    "e2e",
+    "bug-finder"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "playwright-core": "^1.65.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0"
+  }
+}

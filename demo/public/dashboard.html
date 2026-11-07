@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Dashboard · ChaiCart</title><link rel="stylesheet" href="/style.css"></head><body>
+<nav><b>☕ ChaiCart</b><a href="/">Home</a><a href="/menu">Menu</a><a href="/pricing">Pricing</a><a href="/signup">Sign up</a><a href="/dashboard">Dashboard</a></nav>
+<main>
+  <h1>Your orders</h1>
+  <p id="orders">Loading your orders…</p>
+  <button class="btn ghost" onclick="exportCsv()">Export CSV</button>
+  <button class="btn danger" onclick="alert('Account deleted!')">Delete account</button>
+  <button class="btn ghost" onclick="refresh()"><span aria-hidden="true">⟳</span></button>
+</main>
+<script src="/dashboard.js"></script></body></html>

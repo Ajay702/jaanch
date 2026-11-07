@@ -1,0 +1,6 @@
+node_modules/
+jaanch-report/
+test-results/
+playwright-report/
+.env
+.DS_Store
