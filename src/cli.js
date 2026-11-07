@@ -20,7 +20,8 @@ Usage
 
 Options
   -s, --steps <n>        Max actions to try (default 25)
-  -w, --watch            Show the browser while it works (headed, slowed down)
+  -w, --watch            Show the browser while it works (headed, with an on-screen HUD)
+  -r, --record <file>    Record a video of the run (.webm) with the HUD
   -o, --out <dir>        Report folder (default ./jaanch-report)
   -t, --tests <file>     Where to write Playwright tests (default <out>/jaanch.spec.js)
   -b, --browser <name>   brave | chrome | edge (default brave, falls back to the others)
@@ -83,6 +84,7 @@ export async function main(argv = process.argv.slice(2)) {
       options: {
         steps: { type: 'string', short: 's', default: '25' },
         watch: { type: 'boolean', short: 'w', default: false },
+        record: { type: 'string', short: 'r' },
         out: { type: 'string', short: 'o', default: 'jaanch-report' },
         tests: { type: 'string', short: 't' },
         browser: { type: 'string', short: 'b', default: 'brave' },
@@ -148,7 +150,10 @@ export async function main(argv = process.argv.slice(2)) {
 
   let result;
   try {
-    result = await explore({ browser, startUrl, maxSteps, planner: new Planner({ useAI, log }), outDir, log });
+    result = await explore({
+      browser, startUrl, maxSteps, planner: new Planner({ useAI, log }), outDir, log,
+      viewport: o.record ? { width: 960, height: 640 } : undefined, hud: o.watch, brain: useAI ? `BharatCode · ${aiConfig().model}` : 'rules', recordTo: o.record ?? null,
+    });
   } finally {
     await browser.close().catch(() => {});
   }
@@ -185,6 +190,7 @@ export async function main(argv = process.argv.slice(2)) {
   }
   if (counts.low) console.log(dim(`  …plus ${counts.low} low-severity (accessibility) finding(s)`));
   console.log(`\n  📄 Report: ${bold(path.relative(process.cwd(), reportFile))}`);
+  if (result.video) console.log(`  🎬 Video:  ${bold(path.relative(process.cwd(), result.video))}`);
   if (testsFile) console.log(`  🧪 Tests:  ${bold(testsFile)} ${dim('(npx playwright test ' + testsFile + ')')}`);
   if (useAI) console.log(dim(`  🧠 ${usage.calls} BharatCode calls · ${usage.inputTokens + usage.outputTokens} tokens`));
   console.log('');

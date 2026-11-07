@@ -1,5 +1,7 @@
 # Jaanch 🔍
 
+[![CI](https://github.com/Ajay702/jaanch/actions/workflows/ci.yml/badge.svg)](https://github.com/Ajay702/jaanch/actions/workflows/ci.yml) ![Powered by BharatCode](https://img.shields.io/badge/AI-BharatCode%20qwen--3.8--27b-ff6a13) ![Playwright](https://img.shields.io/badge/Playwright-Brave-45ba4b) ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
+
 **An AI tester that uses your web app like a real person, finds what breaks, tells you how to fix it, and writes the tests for you.**
 
 Jaanch (जाँच, Hindi for *inspection*) opens your site in **Brave** with **Playwright**, clicks buttons, fills forms and moves between pages. **BharatCode AI** decides what to try next and explains every bug it finds.
@@ -8,7 +10,9 @@ Jaanch (जाँच, Hindi for *inspection*) opens your site in **Brave** with 
 npx github:Ajay702/jaanch http://localhost:3000
 ```
 
-<!-- demo GIF goes here: docs/demo.gif -->
+![Jaanch exploring a demo shop in Brave: BharatCode AI picks each step, and bugs appear in the HUD as they're found](docs/demo.gif)
+
+<sub>Real run on the included ChaiCart demo with BharatCode `qwen-3.8-27b`. Waiting time for the model is cut out; everything else is real speed ×1.8.</sub>
 
 ```
 Jaanch v0.1.0  — testing http://localhost:4173
@@ -76,7 +80,8 @@ Students get free access (Qwen, 10M tokens a day). A full 25-step run on the dem
 jaanch <url> [options]
 
   -s, --steps <n>        Max actions to try (default 25)
-  -w, --watch            Show the browser while it works
+  -w, --watch            Show the browser while it works, with a live HUD
+  -r, --record <file>    Save a video of the run (.webm), HUD included
   -o, --out <dir>        Report folder (default ./jaanch-report)
   -t, --tests <file>     Where to write Playwright tests
   -b, --browser <name>   brave | chrome | edge (default brave)

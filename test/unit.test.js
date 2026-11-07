@@ -88,3 +88,11 @@ test('generated tests replay only the steps on the bug page', () => {
   assert.match(spec, /expect\(errors/);
   assert.equal(generateTests({ issues: [{ ...issue, kind: 'a11y' }], steps, startUrl: 'http://x.test/' }), null);
 });
+
+import { cleanValue } from '../src/planner.js';
+test('cleanValue rejects leaked model output', () => {
+  assert.equal(cleanValue('Priya Sharma'), 'Priya Sharma');
+  assert.equal(cleanValue('Asha Verma`}]]with correction:'), null);
+  assert.equal(cleanValue('{"value":"x"}'), null);
+  assert.equal(cleanValue(''), null);
+});

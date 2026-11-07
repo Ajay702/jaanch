@@ -22,6 +22,14 @@ export function sampleValue(el) {
   return 'jaanch test';
 }
 
+/** Accepts a model-suggested input value only if it looks like something a person would type. */
+export function cleanValue(v) {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  if (!s || s.length > 80 || /[`{}\[\]<>\n\r]|correction|value:|json/i.test(s)) return null;
+  return s;
+}
+
 const pathKey = (url) => {
   try {
     const u = new URL(url);
@@ -132,6 +140,11 @@ export class Planner {
     const list = candidates(snap, mem);
     if (!list.length) return null;
     if (!this.useAI || this.aiFailures >= 3) return { ...list[0], reason: list[0].why, by: 'rules' };
+    // Save model calls where there is no real decision: a single option, or filling a form
+    // field (the built-in sample data is already realistic Indian test data).
+    if (list.length === 1 || list[0].type === 'fill' || list[0].type === 'select') {
+      return { ...list[0], reason: list[0].why, by: 'rules' };
+    }
 
     const numbered = list.map((c, i) => `${i}. ${describeAction(c)}${c.el?.required ? ' (required)' : ''}`).join('\n');
     const recent = mem.history.slice(-8).map((h) => `- ${h.description}${h.newIssues ? ` → ${h.newIssues} new issue(s)` : ''}`).join('\n') || '- (nothing yet)';
@@ -146,15 +159,19 @@ Pages visited: ${[...mem.visited].map(pathKey).join(', ')}
 
 Possible actions:
 ${numbered}`;
+    // Free-tier requests can queue; say so instead of looking frozen.
+    const slow = setTimeout(() => this.log.info('waiting for BharatCode AI (the free queue is busy)…'), 8000);
     try {
-      const out = await askJSON({ name: 'next_action', instructions: PLAN_INSTRUCTIONS, input, schema: PLAN_SCHEMA, maxTokens: 400, stage: 'plan' });
+      const out = await askJSON({ name: 'next_action', instructions: PLAN_INSTRUCTIONS, input, schema: PLAN_SCHEMA, maxTokens: 1500, stage: 'plan' });
+      clearTimeout(slow);
       // The model may want to stop early; keep going while anything is left to try.
       if (out.choice === -1) return { ...list[0], reason: `${list[0].why} (AI wanted to stop; still untried actions)`, by: 'rules' };
       const chosen = list[out.choice];
       if (!chosen) throw new Error(`model picked invalid index ${out.choice}`);
-      const value = chosen.type === 'fill' && out.value ? out.value.slice(0, 200) : chosen.value;
+      const value = chosen.type === 'fill' && cleanValue(out.value) ? cleanValue(out.value) : chosen.value;
       return { ...chosen, value, reason: out.reason, by: 'ai' };
     } catch (err) {
+      clearTimeout(slow);
       this.aiFailures += 1;
       this.log.warn(`AI planner unavailable (${err.message}); using rules for this step`);
       return { ...list[0], reason: list[0].why, by: 'rules' };

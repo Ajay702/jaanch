@@ -4,6 +4,10 @@ import path from 'node:path';
 import { Collector, shortUrl } from './collector.js';
 import { snapshot, describe, locatorFor } from './snapshot.js';
 import { candidates, describeAction, elementKey } from './planner.js';
+import { Hud } from './hud.js';
+
+// Report screenshots never show the HUD.
+const HIDE_HUD = '#__jaanch_hud{display:none!important}.__jaanch_target{outline:none!important;box-shadow:none!important}';
 
 const normalize = (url) => {
   const u = new URL(url);
@@ -16,10 +20,14 @@ async function settle(page) {
   await page.waitForTimeout(400); // let async handlers throw
 }
 
-export async function explore({ browser, startUrl, maxSteps, planner, outDir, log, viewport = { width: 1280, height: 800 } }) {
+export async function explore({ browser, startUrl, maxSteps, planner, outDir, log, viewport, hud: showHud = false, brain = 'rules', recordTo = null }) {
+  viewport ??= { width: 1280, height: 800 };
   const origin = new URL(startUrl).origin;
-  const context = await browser.newContext({ viewport, ignoreHTTPSErrors: true });
+  const videoDir = recordTo ? fs.mkdtempSync(path.join(path.dirname(path.resolve(recordTo)), '.jaanch-video-')) : null;
+  const context = await browser.newContext({ viewport, ignoreHTTPSErrors: true, ...(videoDir ? { recordVideo: { dir: videoDir, size: viewport } } : {}) });
   const page = await context.newPage();
+  const hud = showHud || recordTo ? new Hud(page, { brain }) : null;
+  if (hud) await hud.install(context);
   context.on('page', (p) => {
     // Links with target=_blank open a new tab; keep everything in one tab.
     if (p !== page) p.close().catch(() => {});
@@ -48,7 +56,7 @@ export async function explore({ browser, startUrl, maxSteps, planner, outDir, lo
     if (pages.has(key)) return;
     mem.visited.add(key);
     const shot = `page-${pages.size + 1}.png`;
-    await page.screenshot({ path: path.join(shotsDir, shot), fullPage: false }).catch(() => {});
+    await page.screenshot({ path: path.join(shotsDir, shot), fullPage: false, style: HIDE_HUD }).catch(() => {});
     pages.set(key, { url: snap.url, title: snap.title, findings: snap.findings, screenshot: `screens/${shot}`, firstStep: stepNo });
     log.page(shortUrl(snap.url), snap.title, snap.findings.length);
   };
@@ -84,6 +92,7 @@ export async function explore({ browser, startUrl, maxSteps, planner, outDir, lo
     }
 
     mem.issueCount = collector.issues.length;
+    await hud?.show({ step: n, thinking: true, action: brain === 'rules' ? 'Choosing the next step…' : 'BharatCode AI is choosing the next step…', why: '', fresh: 0 });
     const action = await planner.next(snap, mem);
     if (!action) {
       log.info('Nothing left to try. Exploration finished.');
@@ -105,6 +114,11 @@ export async function explore({ browser, startUrl, maxSteps, planner, outDir, lo
       url: action.url,
     };
     if (action.el) mem.tried.add(elementKey(snap.url, action.el));
+    if (hud) {
+      await hud.show({ thinking: false, action: step.description, why: action.reason && action.by === 'ai' ? action.reason : '' });
+      if (action.el) await hud.highlight(action.el.id);
+      else await page.waitForTimeout(500);
+    }
 
     const t = Date.now();
     try {
@@ -130,6 +144,11 @@ export async function explore({ browser, startUrl, maxSteps, planner, outDir, lo
 
     const fresh = collector.issuesForStep(n);
     step.newIssues = fresh.length;
+    if (hud) {
+      await hud.clearHighlight();
+      await hud.bugs(fresh);
+      if (fresh.length) await page.waitForTimeout(1200);
+    }
     // If the action navigated, the bug belongs to the page that loaded, not the one we left.
     if (fresh.length && normalize(step.toUrl) !== normalize(step.fromUrl) && new URL(step.toUrl).origin === origin) {
       for (const i of fresh) Object.assign(i, { pageUrl: step.toUrl, linkedFrom: step.fromUrl, onLoad: true });
@@ -153,9 +172,21 @@ export async function explore({ browser, startUrl, maxSteps, planner, outDir, lo
     }
   }
 
+  let video = null;
+  if (hud) {
+    await hud.show({ thinking: false, action: `Done: ${collector.issues.filter((i) => i.kind !== 'a11y').length} bugs found. Writing report + tests…`, why: '', fresh: 0 });
+    await page.waitForTimeout(2000);
+  }
+  const rec = videoDir ? page.video() : null;
   await context.close();
+  if (rec) {
+    await rec.saveAs(path.resolve(recordTo));
+    await rec.delete().catch(() => {});
+    fs.rmSync(videoDir, { recursive: true, force: true });
+    video = path.resolve(recordTo);
+  }
   for (const s of steps) delete s.done;
-  return { steps, issues: collector.issues, pages: [...pages.values()] };
+  return { steps, issues: collector.issues, pages: [...pages.values()], video };
 }
 
 /** Screenshot after a step that produced new issues, so each bug has a picture. */
@@ -167,7 +198,7 @@ async function finishStep(step, collector, page, shotsDir) {
   const file = `step-${step.n}.png`;
   step.screenshot = `screens/${file}`;
   for (const i of fresh) i.screenshot ??= step.screenshot;
-  await page.screenshot({ path: path.join(shotsDir, file) }).catch(() => {});
+  await page.screenshot({ path: path.join(shotsDir, file), style: HIDE_HUD }).catch(() => {});
 }
 
 export { candidates };

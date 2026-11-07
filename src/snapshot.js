@@ -73,7 +73,7 @@ export async function snapshot(page) {
     return {
       url: location.href,
       title: document.title,
-      text: clean(document.body?.innerText).length ? document.body.innerText.replace(/\s+/g, ' ').trim().slice(0, 1200) : '',
+      text: (document.body?.innerText || '').replace(document.getElementById('__jaanch_hud')?.innerText || '\u0000', '').replace(/\s+/g, ' ').trim().slice(0, 1200),
       elements,
       findings,
     };
