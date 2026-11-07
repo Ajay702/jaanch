@@ -64,9 +64,11 @@ npx github:Ajay702/jaanch http://localhost:3000
 Without a key Jaanch still works, using built-in rules. With a [BharatCode](https://bharatcode.ai/build) key it explores smarter and writes much better explanations:
 
 ```bash
-echo "BHARATCODE_API_KEY=bc_live_..." > .env    # key from https://bharatcode.ai/account
+npm run set-key        # paste your key from https://bharatcode.ai/account (hidden input, saved to .env)
 npx github:Ajay702/jaanch --check-ai            # ✔ BharatCode AI works (qwen-3.8-27b): नमस्ते
 ```
+
+Students get free access (Qwen, 10M tokens a day). A full 25-step run on the demo shop uses about 20 model calls and roughly 12k tokens.
 
 ## Options
 

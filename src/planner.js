@@ -70,8 +70,15 @@ export function candidates(snap, mem) {
   }
   // Prefer links to pages we have not seen yet over links to visited pages.
   out.sort((a, b) => rank(a) - rank(b));
+  // Remember how much is left to try here, so we can come back if we leave early.
+  const here = pathKey(snap.url);
+  mem.untried ??= new Map();
+  mem.untried.set(here, out.filter((c) => c.el.tag !== 'a' || c.fresh).length);
   for (const url of mem.frontier) {
     if (!mem.visited.has(url)) out.push({ type: 'goto', url, why: 'visit a page seen earlier' });
+  }
+  for (const [p, left] of mem.untried) {
+    if (p !== here && left > 0) out.push({ type: 'goto', url: origin + p, why: `go back: ${left} untried action(s) there`, revisit: true });
   }
   return out.slice(0, 40);
 }
@@ -109,6 +116,8 @@ Rules:
 - Behave like a real Indian user: realistic names, emails, phone numbers, PIN codes.
 - Fill required fields before submitting a form. Try each form and button once.
 - Prefer new pages and features over ones already visited.
+- Try every button on a page before leaving it; each button may hide a different bug.
+- Use "go back" actions to finish pages you left early.
 - Return -1 only when every action has been tried or nothing useful is left.
 - For fill actions, put the text to type in "value"; otherwise value is "".`;
 
@@ -139,7 +148,8 @@ Possible actions:
 ${numbered}`;
     try {
       const out = await askJSON({ name: 'next_action', instructions: PLAN_INSTRUCTIONS, input, schema: PLAN_SCHEMA, maxTokens: 400, stage: 'plan' });
-      if (out.choice === -1) return null;
+      // The model may want to stop early; keep going while anything is left to try.
+      if (out.choice === -1) return { ...list[0], reason: `${list[0].why} (AI wanted to stop; still untried actions)`, by: 'rules' };
       const chosen = list[out.choice];
       if (!chosen) throw new Error(`model picked invalid index ${out.choice}`);
       const value = chosen.type === 'fill' && out.value ? out.value.slice(0, 200) : chosen.value;

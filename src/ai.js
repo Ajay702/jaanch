@@ -44,7 +44,7 @@ export function parseJSON(text) {
   }
 }
 
-async function post(body, { timeoutMs = 60000 } = {}) {
+async function post(body, { timeoutMs = 90000 } = {}) {
   const { key, base } = aiConfig();
   const res = await fetch(`${base}/responses`, {
     method: 'POST',
